@@ -4,6 +4,9 @@
 
 Ce projet est une API de simulation de survie où l'utilisateur se retrouve bloqué sur une île mystérieuse. Chaque jour, il doit faire des choix qui affectent ses statistiques de survie : faim, énergie et moral.
 
+## 👀 Aperçu
+![Aperçu](image.png)
+
 ## 🌟 Fonctionnalités
 
 - Système de scénarios avec différentes options de choix
