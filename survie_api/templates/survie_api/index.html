@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>L'île perdue - Simulation de survie</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --text-color: #333;
+            --bg-color: #f5f5f5;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--secondary-color);
+            padding-bottom: 1rem;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+        
+        .status-item {
+            flex: 1;
+            margin: 0 10px;
+            text-align: center;
+        }
+        
+        .status-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .progress {
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .progress-bar.faim {
+            background-color: var(--warning-color);
+        }
+        
+        .progress-bar.energie {
+            background-color: var(--secondary-color);
+        }
+        
+        .progress-bar.moral {
+            background-color: var(--primary-color);
+        }
+        
+        .scenario {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .choice-btn {
+            padding: 1rem;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-align: left;
+        }
+        
+        .choice-btn:hover {
+            background-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        .new-game-btn {
+            display: block;
+            margin: 2rem auto;
+            padding: 1rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+        }
+        
+        .new-game-btn:hover {
+            background-color: #1a2530;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .message {
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .message.visible {
+            opacity: 1;
+        }
+        
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                width: 95%;
+                padding: 1rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .status-item {
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌴 L'île perdue</h1>
+            <p>Tu es bloqué sur une île mystérieuse et tu dois survivre. Fais les bons choix !</p>
+        </header>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label">🍔 Faim</span>
+                <div class="progress">
+                    <div id="faim-bar" class="progress-bar faim" style="width: 100%"></div>
+                </div>
+                <span id="faim-value">100%</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">⚡ Énergie</span>
+                <div class="progress">
+                    <div id="energie-bar" class="progress-bar energie" style="width: 100%"></div>
+                </div>
+                <span id="energie-value">100%</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="status-label">😊 Moral</span>
+                <div class="progress">
+                    <div id="moral-bar" class="progress-bar moral" style="width: 100%"></div>
+                </div>
+                <span id="moral-value">100%</span>
+            </div>
+        </div>
+        
+        <div id="scenario" class="scenario">
+            <p id="scenario-texte">Chargement de ton aventure...</p>
+        </div>
+        
+        <div id="choices" class="choices">
+            <!-- Les choix seront ajoutés dynamiquement par JavaScript -->
+        </div>
+        
+        <button id="new-game" class="new-game-btn">Nouvelle partie</button>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 - L'île perdue - API de simulation de survie</p>
+    </footer>
+    
+    <script>
+        // État du jeu
+        let currentScenario = null;
+        let playerState = {
+            faim: 100,
+            energie: 100,
+            moral: 100
+        };
+        
+        // Éléments DOM
+        const scenarioTexte = document.getElementById('scenario-texte');
+        const choicesContainer = document.getElementById('choices');
+        const newGameBtn = document.getElementById('new-game');
+        const messageElement = document.getElementById('message');
+        
+        // Barres de progression
+        const faimBar = document.getElementById('faim-bar');
+        const energieBar = document.getElementById('energie-bar');
+        const moralBar = document.getElementById('moral-bar');
+        const faimValue = document.getElementById('faim-value');
+        const energieValue = document.getElementById('energie-value');
+        const moralValue = document.getElementById('moral-value');
+        
+        // Fonction pour mettre à jour les statistiques du joueur
+        function updateStats(stats) {
+            playerState = stats;
+            
+            faimBar.style.width = `${stats.faim}%`;
+            energieBar.style.width = `${stats.energie}%`;
+            moralBar.style.width = `${stats.moral}%`;
+            
+            faimValue.textContent = `${stats.faim}%`;
+            energieValue.textContent = `${stats.energie}%`;
+            moralValue.textContent = `${stats.moral}%`;
+        }
+        
+        // Fonction pour afficher un message
+        function showMessage(text, type = 'success') {
+            messageElement.textContent = text;
+            messageElement.className = `message ${type} visible`;
+            
+            setTimeout(() => {
+                messageElement.className = 'message';
+            }, 3000);
+        }
+        
+        // Fonction pour charger un scénario
+        function loadScenario(scenarioId) {
+            fetch(`/api/scenario/${scenarioId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors du chargement du scénario');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    currentScenario = data;
+                    scenarioTexte.textContent = data.texte;
+                    
+                    // Effacer les choix précédents
+                    choicesContainer.innerHTML = '';
+                    
+                    // Ajouter les nouveaux choix
+                    data.choix.forEach(choix => {
+                        const choiceBtn = document.createElement('button');
+                        choiceBtn.className = 'choice-btn';
+                        choiceBtn.textContent = choix.texte;
+                        choiceBtn.addEventListener('click', () => makeChoice(data.id, choix.id));
+                        choicesContainer.appendChild(choiceBtn);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showMessage(error.message, 'error');
+                });
+        }
+        
+        // Fonction pour faire un choix
+        function makeChoice(scenarioId, choixId) {
+            fetch(`/api/scenario/${scenarioId}/choisir/${choixId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors du choix');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Afficher le message
+                    showMessage(data.message);
+                    
+                    // Mettre à jour les stats
+                    updateStats(data.etat);
+                    
+                    // Charger le prochain scénario
+                    loadScenario(data.suivant.id);
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showMessage(error.message, 'error');
+                });
+        }
+        
+        // Fonction pour démarrer une nouvelle partie
+        function startNewGame() {
+            fetch('/api/nouvelle-partie/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                }
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erreur lors du démarrage d\'une nouvelle partie');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Réinitialiser les stats
+                    updateStats({
+                        faim: 100,
+                        energie: 100,
+                        moral: 100
+                    });
+                    
+                    // Charger le premier scénario
+                    currentScenario = data;
+                    scenarioTexte.textContent = data.texte;
+                    
+                    // Effacer les choix précédents
+                    choicesContainer.innerHTML = '';
+                    
+                    // Ajouter les nouveaux choix
+                    data.choix.forEach(choix => {
+                        const choiceBtn = document.createElement('button');
+                        choiceBtn.className = 'choice-btn';
+                        choiceBtn.textContent = choix.texte;
+                        choiceBtn.addEventListener('click', () => makeChoice(data.id, choix.id));
+                        choicesContainer.appendChild(choiceBtn);
+                    });
+                    
+                    showMessage('Nouvelle partie commencée !');
+                })
+                .catch(error => {
+                    console.error('Erreur:', error);
+                    showMessage(error.message, 'error');
+                });
+        }
+        
+        // Obtenir le token CSRF des cookies
+        function getCsrfToken() {
+            const name = 'csrftoken=';
+            const decodedCookie = decodeURIComponent(document.cookie);
+            const ca = decodedCookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') {
+                    c = c.substring(1);
+                }
+                if (c.indexOf(name) === 0) {
+                    return c.substring(name.length, c.length);
+                }
+            }
+            return '';
+        }
+        
+        // Événements
+        newGameBtn.addEventListener('click', startNewGame);
+        
+        // Charger une nouvelle partie au chargement de la page
+        document.addEventListener('DOMContentLoaded', startNewGame);
+    </script>
+</body>
+</html>
